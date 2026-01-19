@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
 // Singleton socket connection
-const socket = io("http://localhost:5000");
+const socket = io("https://hotel-qr-system.onrender.com");
 
 export default socket;
