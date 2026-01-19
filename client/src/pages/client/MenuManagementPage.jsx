@@ -21,14 +21,15 @@ const MenuManagementPage = () => {
         try {
             const res = await API.get('/restaurants/my-restaurants');
             if (res.data.length > 0) {
-                setRestaurantId(res.data[0]._id);
-                fetchData(res.data[0]._id);
+                const id = res.data[0]._id;
+                setRestaurantId(id);
+                fetchData(id);
             } else {
-                // Handle no restaurant case
-                setRestaurantId(null);
+                setLoading(false);
             }
         } catch (error) {
             console.error("No restaurant found", error);
+            setLoading(false);
         }
     };
 
@@ -45,6 +46,8 @@ const MenuManagementPage = () => {
             }
         } catch (error) {
             console.error("Error fetching data", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -57,6 +60,17 @@ const MenuManagementPage = () => {
             fetchData(restaurantId);
         } catch (error) {
             toast.error("Failed to add category");
+        }
+    };
+
+    const handleDeleteCategory = async (id) => {
+        if (!window.confirm("Are you sure? Items in this category will become Uncategorized.")) return;
+        try {
+            await API.delete(`/categories/${id}`);
+            setCategories(categories.filter(c => c._id !== id));
+            toast.success("Category deleted");
+        } catch (error) {
+            toast.error("Failed to delete category");
         }
     };
 
@@ -137,9 +151,15 @@ const MenuManagementPage = () => {
                     </form>
                     <ul className="bg-white rounded-xl shadow-sm divide-y">
                         {categories.map(cat => (
-                            <li key={cat._id} className="p-4 flex justify-between">
-                                <span>{cat.name}</span>
-                                {/* Delete category not implemented yet to avoid orphaned items complexity for this MVP */}
+                            <li key={cat._id} className="p-4 flex justify-between items-center group">
+                                <span className="font-medium">{cat.name}</span>
+                                <button
+                                    onClick={() => handleDeleteCategory(cat._id)}
+                                    className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Delete Category"
+                                >
+                                    <FaTrash />
+                                </button>
                             </li>
                         ))}
                     </ul>
@@ -198,28 +218,68 @@ const MenuManagementPage = () => {
                         </form>
                     </div>
 
-                    {/* Items List */}
-                    <div className="md:col-span-2 grid sm:grid-cols-2 gap-4">
-                        {menuItems.map(item => (
-                            <div key={item._id} className="bg-white p-4 rounded-xl shadow-sm flex gap-3 relative group">
-                                <img
-                                    src={item.image ? `http://localhost:5000/${item.image.replace(/\\/g, '/')}` : 'https://placehold.co/100'}
-                                    alt={item.name}
-                                    className="w-20 h-20 object-cover rounded-lg bg-gray-100"
-                                />
-                                <div>
-                                    <h3 className="font-bold">{item.name}</h3>
-                                    <p className="text-[#ff6b6b] font-medium">₹{item.price}</p>
-                                    <p className="text-xs text-gray-400 mt-1">{categories.find(c => c._id === item.categoryId)?.name}</p>
+                    {/* Items List Grouped by Category */}
+                    <div className="md:col-span-2 space-y-8">
+                        {categories.map(cat => {
+                            const catItems = menuItems.filter(i => i.categoryId === cat._id);
+                            if (catItems.length === 0) return null;
+
+                            return (
+                                <div key={cat._id}>
+                                    <h3 className="font-bold text-lg text-gray-700 mb-3 border-b pb-1">{cat.name}</h3>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {catItems.map(item => (
+                                            <div key={item._id} className="bg-white p-4 rounded-xl shadow-sm flex gap-3 relative group">
+                                                <img
+                                                    src={item.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${item.image.replace(/\\/g, '/')}` : 'https://placehold.co/100'}
+                                                    alt={item.name}
+                                                    className="w-20 h-20 object-cover rounded-lg bg-gray-100"
+                                                />
+                                                <div>
+                                                    <h3 className="font-bold">{item.name}</h3>
+                                                    <p className="text-[#ff6b6b] font-medium">₹{item.price}</p>
+                                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteItem(item._id)}
+                                                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 rounded-full p-1"
+                                                >
+                                                    <FaTrash />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteItem(item._id)}
-                                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <FaTrash />
-                                </button>
+                            );
+                        })}
+
+                        {/* Uncategorized Items (if any, though usually force category) */}
+                        {menuItems.filter(i => !categories.find(c => c._id === i.categoryId)).length > 0 && (
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-700 mb-3 border-b pb-1">Uncategorized</h3>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    {menuItems.filter(i => !categories.find(c => c._id === i.categoryId)).map(item => (
+                                        <div key={item._id} className="bg-white p-4 rounded-xl shadow-sm flex gap-3 relative group">
+                                            <img
+                                                src={item.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${item.image.replace(/\\/g, '/')}` : 'https://placehold.co/100'}
+                                                alt={item.name}
+                                                className="w-20 h-20 object-cover rounded-lg bg-gray-100"
+                                            />
+                                            <div>
+                                                <h3 className="font-bold">{item.name}</h3>
+                                                <p className="text-[#ff6b6b] font-medium">₹{item.price}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteItem(item._id)}
+                                                className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 rounded-full p-1"
+                                            >
+                                                <FaTrash />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             )}

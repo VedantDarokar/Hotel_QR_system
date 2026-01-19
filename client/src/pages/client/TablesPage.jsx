@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../api/api';
 import { toast } from 'react-toastify';
-import { FaQrcode, FaPrint } from 'react-icons/fa';
+import { FaQrcode, FaPrint, FaTrash } from 'react-icons/fa';
 
 const TablesPage = () => {
     const [restaurantId, setRestaurantId] = useState(null);
@@ -44,7 +44,18 @@ const TablesPage = () => {
             setTableNumber('');
             fetchTables(restaurantId);
         } catch (error) {
-            toast.error("Failed to add table");
+            toast.error(error.response?.data?.message || "Failed to add table");
+        }
+    };
+
+    const handleDeleteTable = async (id) => {
+        if (!window.confirm("Delete this table? functionality will be lost for this QR code.")) return;
+        try {
+            await API.delete(`/tables/${id}`);
+            toast.success("Table deleted");
+            setTables(tables.filter(t => t._id !== id));
+        } catch (error) {
+            toast.error("Failed to delete table");
         }
     };
 
@@ -98,12 +109,22 @@ const TablesPage = () => {
                             <span className="font-bold text-lg mb-2">Table {table.tableNumber}</span>
                             <img src={table.qrCode} alt="QR" className="w-32 h-32 mb-2" />
 
-                            <button
-                                onClick={() => handlePrint(table.qrCode, table.tableNumber)}
-                                className="flex items-center gap-2 text-sm text-blue-500 hover:underline mt-2"
-                            >
-                                <FaPrint /> Print QR
-                            </button>
+                            <div className="flex gap-2 mt-2">
+                                <button
+                                    onClick={() => handlePrint(table.qrCode, table.tableNumber)}
+                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                    title="Print QR"
+                                >
+                                    <FaPrint />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteTable(table._id)}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                    title="Delete Table"
+                                >
+                                    <FaTrash />
+                                </button>
+                            </div>
                         </div>
                     ))}
                     {tables.length === 0 && (

@@ -37,7 +37,29 @@ const getCategories = async (req, res) => {
     }
 };
 
+// @desc    Delete a category
+// @route   DELETE /api/categories/:id
+// @access  Private/Client
+const deleteCategory = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        if (!category) return res.status(404).json({ message: 'Category not found' });
+
+        // Verify ownership
+        const restaurant = await Restaurant.findOne({ _id: category.restaurantId, ownerId: req.user.id });
+        if (!restaurant) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await category.deleteOne();
+        res.json({ message: 'Category deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createCategory,
-    getCategories
+    getCategories,
+    deleteCategory
 };

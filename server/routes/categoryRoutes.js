@@ -6,5 +6,6 @@ const { protect, isClient } = require('../middleware/authMiddleware');
 router.post('/', protect, isClient, createCategory);
 router.get('/:restaurantId', getCategories); // Public for menu viewing, but likely protected context in dashboard? 
 // Actually menu viewing is public for customers.
+router.delete('/:id', protect, isClient, require('../controllers/categoryController').deleteCategory);
 
 module.exports = router;

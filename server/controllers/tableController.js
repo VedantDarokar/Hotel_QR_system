@@ -14,19 +14,25 @@ const createTable = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
+        // Check if table number already exists
+        const existingTable = await Table.findOne({ restaurantId, tableNumber });
+        if (existingTable) {
+            return res.status(400).json({ message: 'Table number already exists' });
+        }
+
         // Create table first to get ID
         const newTable = new Table({
             restaurantId,
             tableNumber,
-            qrUrl: 'pending' 
+            qrUrl: 'pending'
         });
-        
+
         await newTable.save();
 
         // Construct the URL using the new _id
         const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const qrContent = `${baseUrl}/menu/${restaurantId}/${newTable._id}`;
-        
+
         // Generate QR Code Image (Data URL)
         const qrCodeImage = await QRCode.toDataURL(qrContent);
 
@@ -53,8 +59,30 @@ const getTables = async (req, res) => {
     }
 };
 
+// @desc    Delete a table
+// @route   DELETE /api/tables/:id
+// @access  Private/Client
+const deleteTable = async (req, res) => {
+    try {
+        const table = await Table.findById(req.params.id);
+        if (!table) return res.status(404).json({ message: 'Table not found' });
+
+        // Verify ownership
+        const restaurant = await Restaurant.findOne({ _id: table.restaurantId, ownerId: req.user.id });
+        if (!restaurant) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await table.deleteOne();
+        res.json({ message: 'Table deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 
 module.exports = {
     createTable,
-    getTables
+    getTables,
+    deleteTable
 };

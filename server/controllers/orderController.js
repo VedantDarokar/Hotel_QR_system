@@ -66,12 +66,18 @@ const updateOrderStatus = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        order.status = status;
+        if (status) order.status = status;
+        if (req.body.paymentStatus) order.paymentStatus = req.body.paymentStatus;
+
         await order.save();
 
         // Socket IO - Notify Customer
         const io = req.app.get('socketio');
-        io.to(req.params.id).emit('order_status', status);
+        // Emit general update for this order room
+        io.to(req.params.id).emit('order_status', {
+            status: order.status,
+            paymentStatus: order.paymentStatus
+        });
 
         res.json(order);
     } catch (error) {
@@ -188,10 +194,32 @@ const downloadBillPDF = async (req, res) => {
     }
 }
 
+// @desc    Delete an order
+// @route   DELETE /api/orders/:id
+// @access  Private/Client
+const deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Verify ownership
+        const restaurant = await Restaurant.findOne({ _id: order.restaurantId, ownerId: req.user.id });
+        if (!restaurant) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await order.deleteOne();
+        res.json({ message: 'Order deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     placeOrder,
     getOrders,
     updateOrderStatus,
     generateBill,
-    downloadBillPDF
+    downloadBillPDF,
+    deleteOrder
 };

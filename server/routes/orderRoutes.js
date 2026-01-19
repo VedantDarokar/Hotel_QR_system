@@ -8,5 +8,6 @@ router.get('/:restaurantId', protect, isClient, getOrders);
 router.put('/:id', protect, isClient, updateOrderStatus);
 router.get('/:id/bill', generateBill);
 router.get('/:id/bill-pdf', downloadBillPDF);
+router.delete('/:id', protect, isClient, require('../controllers/orderController').deleteOrder);
 
 module.exports = router;
