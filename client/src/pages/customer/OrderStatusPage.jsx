@@ -94,7 +94,7 @@ const OrderStatusPage = () => {
                 {/* Bill Actions */}
                 <div className="mt-6 flex justify-center">
                     <button
-                        onClick={() => window.open(`http://localhost:5000/api/orders/${order._id}/bill-pdf`, '_blank')}
+                        onClick={() => window.open(`${import.meta.env.VITE_API_URL}/orders/${order._id}/bill-pdf`, '_blank')}
                         className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all text-sm sm:text-base font-medium hover:shadow-md"
                     >
                         Download / Print Bill

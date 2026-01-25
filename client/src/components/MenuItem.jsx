@@ -9,7 +9,9 @@ const MenuItem = ({ item }) => {
     const cartItem = cart.find(c => c._id === item._id);
     const quantity = cartItem ? cartItem.quantity : 0;
 
-    const imageUrl = item.image ? `http://localhost:5000/${item.image.replace(/\\/g, '/')}` : 'https://placehold.co/150';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const BASE_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
+    const imageUrl = item.image ? `${BASE_URL}/${item.image.replace(/\\/g, '/')}` : 'https://placehold.co/150';
 
     return (
         <motion.div

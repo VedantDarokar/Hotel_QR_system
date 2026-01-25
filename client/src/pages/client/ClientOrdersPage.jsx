@@ -163,7 +163,7 @@ const ClientOrdersPage = () => {
                                         {order.paymentStatus !== 'paid' && (
                                             <button onClick={() => updateStatus(order._id, order.status, 'paid')} className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">Mark Paid</button>
                                         )}
-                                        <button onClick={() => window.open(`http://localhost:5000/api/orders/${order._id}/bill-pdf`, '_blank')} className="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600 transition-colors">Bill</button>
+                                        <button onClick={() => window.open(`${import.meta.env.VITE_API_URL}/orders/${order._id}/bill-pdf`, '_blank')} className="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600 transition-colors">Bill</button>
                                     </>
                                 )}
                             </div>
